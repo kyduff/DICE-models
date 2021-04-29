@@ -1,22 +1,26 @@
 import numpy as np
-from enum import Enum
+from enum import Enum, auto
 
 INIT_LAND_EMISSIONS = 2.6
 
 class ModelTypes(Enum):
-    SICE = 1
+    SICE = auto()
+    SICE_GOL = auto()
 
 class ModelSpec():
     """
     Specify parameters for DICE models
     """
-    def __init__(self):
+    def __init__(self, model_type: ModelTypes = None):
         """
         Parameters are picked to coincide with Ikefuji et. al unless unspecified.
         Then parameters are chosen to coincide with DICE 2016 but conventions
         from Ikefuji et. al are followed whenever possible
         """
-        self.type = ModelTypes.SICE
+        if model_type is None:
+            self.type = ModelTypes.SICE_GOL
+        else:
+            self.type = model_type
 
         self.timestep = 5. # in years
         self.num_steps = 100 # 500 yr horizon
@@ -52,10 +56,16 @@ class ModelSpec():
         self.tforce = 17.
         self.atmospheric_CO2_1750 = 588.
 
+        # alternate temperature model from Ikefuji et. al
+        if self.type == ModelTypes.SICE:
+            self.eta_0_star = -2.8672
+            self.eta_1_star = 0.8954
+            self.eta_2_star = 0.4622
+
         # exogenous, following convention of DICE 2016
         self.asymp_labor = 11500
         self.labor_growth = 0.134
-        self.labor_discount = 0.001
+        self.labor_discount = 1000.
 
         self.mu_upper_bnd = 1.0 # change to 1.2 to allow negative emissions
         self.mu_lower_bnd = 0.0
