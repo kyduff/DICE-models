@@ -71,3 +71,12 @@ class ModelSpec():
         self.mu_lower_bnd = 0.0
         self.savings_rate_upper_bnd = 1.0
         self.savings_rate_lower_bnd = 0.0
+
+        # scalars for numerical stability
+        # values taken from Faulwasser
+        self.do_stability_adjustments = True
+        self.sc_labor = 1e2
+        self.sc_emissions = 1e2
+        self.sc_obj = 1e4
+        self.sc_capital = 1e2
+        self.sc_consump = 1e2

@@ -16,6 +16,15 @@ def dynamic_update(state, policy, spec: specs.ModelSpec):
     next_state = dict()
     next_state['mu'], next_state['savings_rate'] = policy[0], policy[1]
 
+    # scale for numerical stability
+    if spec.do_stability_adjustments:
+        state['labor'] *= spec.sc_labor
+        state['emissions'] *= spec.sc_emissions
+        state['welfare_obj'] *= spec.sc_obj
+        state['capital'] *= spec.sc_capital
+        state['consumption'] *= spec.sc_consump
+
+
     # exogenous updates
     next_state['time'] = state['time'] + 1
     next_state['exog_forcing'] = spec.f0 + min(spec.f1-spec.f0, (spec.f1-spec.f0)*next_state['time']/spec.tforce)
@@ -52,6 +61,15 @@ def dynamic_update(state, policy, spec: specs.ModelSpec):
                                     + next_state['labor']
                                     * utility(spec.labor_discount * next_state['consumption'] / next_state['labor'], alpha=spec.alpha)
                                     / (1+spec.rho)**next_state['time'])
+
+
+    # numerical scaling
+    if spec.do_stability_adjustments:
+        next_state['labor'] /= spec.sc_labor
+        next_state['emissions'] /= spec.sc_emissions
+        next_state['welfare_obj'] /= spec.sc_obj
+        next_state['capital'] /= spec.sc_capital
+        next_state['consumption'] /= spec.sc_consump
     
     return next_state
 
@@ -74,6 +92,7 @@ def create_init_state(values, spec: specs.ModelSpec):
     psi = spec.p_b * init_state['sigma'] / (1000*spec.theta_2)
     init_state['damage_coeff'] = (1 - psi * init_state['mu']**spec.theta)/ (1 + spec.xi_star * init_state['temp']**2)
     init_state['emissions'] = init_state['sigma']*(1-init_state['mu'])*init_state['Y'] + init_state['land_emissions']
+    init_state['consumption'] = init_state['damage_coeff'] * init_state['Y'] * (1-init_state['savings_rate'])
     
     return init_state
 

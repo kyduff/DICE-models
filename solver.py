@@ -7,44 +7,56 @@ import simulator
 import specs
 
 # Faulwasser tolerance == 1e-8
-TOL = 1e-5
+TOL = 1e-8
 
 def create_optimization_problem(guess, spec: specs.ModelSpec):
     pass
 
+def make_guess(shape):
+    # guess_baseline = 0.9
+    # guess = np.array([guess_baseline] + [guess_baseline]*N + [guess_baseline]*N) # TODO: find a better guess
+    guess = np.random.rand(*shape)
+    return guess
+
+
 if __name__ == '__main__':
     # try to reproduce Ikefuji
-    mspec = specs.ModelSpec(specs.ModelTypes.SICE)
+    TYPE = 'SICE_GOL'
+
+    if TYPE == 'SICE':
+        mspec = specs.ModelSpec(specs.ModelTypes.SICE)
+    elif TYPE == 'SICE_GOL':
+        mspec = specs.ModelSpec(specs.ModelTypes.SICE_GOL)
+
     N = mspec.num_steps
 
-    guess_baseline = 0.9
-    guess = np.array([guess_baseline] + [guess_baseline]*N + [guess_baseline]*N) # TODO: find a better guess
+    guess = make_guess((2*N+1,))
     lower_bds = np.array([0] + [mspec.mu_lower_bnd]*N + [mspec.savings_rate_lower_bnd]*N)
     upper_bds = np.array([1] + [mspec.mu_upper_bnd]*N + [mspec.savings_rate_upper_bnd]*N)
     bds = Bounds(lower_bds, upper_bds)
 
     objective = lambda x, args: -simulator.objective(x, args) # maximize instead of minimize
 
+    METHOD = 'SLSQP'
+    OPTS = {
+        'ftol': TOL,
+        'maxiter': 1000,
+    }
+    
+    print('Running optimization problem...', end='', flush=True)
+
     tic = time.perf_counter()
-    res = minimize(objective, guess, args=(mspec,), bounds=bds, tol=TOL) # tolerance taken from Faulwasser
+    res = minimize(objective, guess, args=(mspec,), bounds=bds, tol=TOL, method=METHOD, options=OPTS) # tolerance taken from Faulwasser
     toc = time.perf_counter()
 
+    print('Done', flush=True)
+
+    print(f"res: {res}")
+    policies = res.x[1:]
+    policies = simulator.reshape_policies(policies)
+    print(f"policies: {policies}")
+    print(f"sol time: {toc-tic} seconds")
+
     if res.success:
-        welfare = simulator.objective(res.x, mspec)
-        print(f"Solution found; exited with message: {res.message}.")
-        print(f"Optimal welfare: {welfare}")
-
-        policies = res.x[1:]
-        policies = simulator.reshape_policies(policies)
-        print(f"res: {res}")
-        print(f"policies: {policies}")
-
-    else:
-        print(f"Solution attempt failed; exited with message: {res.message}")
-        print(f"{res}")
-
-    print()
-    print(f'Solution time (in seconds): {toc-tic}')
-
-    df = simulator.save_simulation(res.x, mspec)
-    df.to_csv(f"SICE_sim_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.csv", index=False)
+        df = simulator.save_simulation(res.x, mspec)
+        df.to_csv(f"{TYPE}_{METHOD}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.csv", index=False)
