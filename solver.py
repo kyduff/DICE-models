@@ -28,6 +28,7 @@ parser.add_argument('--type',
 parser.add_argument('--verbose', '-v', action='count', default=0, help="specify how much output to print; adding more 'v's will add more ouput, for example -vvv will make the output very verbose.")
 parser.add_argument('--dry-run', action='store_true', help=argparse.SUPPRESS) # useful for debugging
 parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
+parser.add_argument('--output-name', '-o', type=str, help='specify the name of the file to which the optimal results will be written (as a csv); if nothing is specified, an informative name will be generated for you.')
 
 
 def make_guess(shape):
@@ -48,8 +49,8 @@ class Optimizer():
 
         # configer pre-conditions
         self.guess = make_guess((2*N+1,))
-        lower_bds = np.array([mspec.savings_rate_lower_bnd] + [mspec.mu_lower_bnd]*N + [mspec.savings_rate_lower_bnd]*N)
-        upper_bds = np.array([mspec.savings_rate_upper_bnd] + [mspec.mu_upper_bnd]*N + [mspec.savings_rate_upper_bnd]*N)
+        lower_bds = np.array([0] + [mspec.mu_lower_bnd]*N + [mspec.savings_rate_lower_bnd]*N)
+        upper_bds = np.array([1] + [mspec.mu_upper_bnd]*N + [mspec.savings_rate_upper_bnd]*N)
         self.bds = scipy.optimize.Bounds(lower_bds, upper_bds)
 
         self.objective = lambda x, args: -simulator.objective(x, args) # maximize instead of minimize
@@ -76,7 +77,7 @@ class Optimizer():
 if __name__ == '__main__':
     # parse user options
     opts = parser.parse_args()
-    verbosity = opts.verbose
+    verbosity = opts.verbose + 1 # automatically show first verbosity level, can easily reduce
     if opts.type == 'SICE':
         mspec = specs.ModelSpec(specs.ModelTypes.SICE)
     elif opts.type == 'SICE_GOL':
@@ -97,7 +98,10 @@ if __name__ == '__main__':
         save_output = res.success
     toc = time.perf_counter()
 
-    print('Done.', flush=True)
+    if dry_run or res.success:
+        print('Done.', flush=True)
+    else:
+        print(f'FAILED. Run again with -vv for more information.', flush=True)
 
     if verbosity > 0:
         print(f'Total simulation time: {toc-tic:.3f} seconds.')
@@ -110,7 +114,11 @@ if __name__ == '__main__':
 
     # save results to a csv for analysis
     if save_output:
-        output_name = f"{opts.type}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.csv"
+        if opts.output_name is None:
+            output_name = f"{opts.type}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.csv"
+        else:
+            output_name = opts.output_name
+
         df = simulator.save_simulation(res.x, mspec)
         df.to_csv(output_name, index=False)
 
