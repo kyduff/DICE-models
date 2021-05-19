@@ -7,6 +7,8 @@ import scipy.optimize
 import simulator
 import specs
 
+VERSION = '0.1'
+
 # Faulwasser tolerance == 1e-8
 TOL = 1e-8
 
@@ -25,6 +27,7 @@ parser.add_argument('--type',
 )
 parser.add_argument('--verbose', '-v', action='count', default=0, help="specify how much output to print; adding more 'v's will add more ouput, for example -vvv will make the output very verbose.")
 parser.add_argument('--dry-run', action='store_true', help=argparse.SUPPRESS) # useful for debugging
+parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
 
 
 def make_guess(shape):
