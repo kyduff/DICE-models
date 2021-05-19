@@ -5,7 +5,7 @@ import specs
 from math import exp, log, log2
 
 def utility(x, alpha=1.45):
-    return (x**(1-alpha) - 1)/(1-alpha)
+    return (x**(1-alpha) - 1)/(1-alpha) if x != 0 else 0
 
 def dynamic_update(state, policy, spec: specs.ModelSpec):
     """
@@ -74,6 +74,9 @@ def dynamic_update(state, policy, spec: specs.ModelSpec):
     return next_state
 
 def create_init_state(values, spec: specs.ModelSpec):
+    """
+    Create the initial state inherited from the 5 year period PRIOR to the first period.
+    """
     init_state = {
         'time': 0.,
         'welfare_obj': 0.,
