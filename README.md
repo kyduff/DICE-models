@@ -32,3 +32,11 @@ python.exe solver.py -h
 on Windows.
 
 Follow the usage instructions and run as many simulations as you want! To change the parameters, you can edit the default values in `specs.py`. To get the original version, just re-download the original file form this repository. (This is pretty clunky, but I don't currently have the time to wrap this up with a better UX)
+
+## Next steps
+
+This is still a work in progress, and there are a number of things that can be done to improve the codebase. Some places to start are:
+
+-  replace `scipy.optimize` with a symbolic solver like [CasADi](https://web.casadi.org) or some implementation of [IPOPT](https://github.com/coin-or/Ipopt) that finds a better optimum
+-  update the interface for changing parameters to be more user-friendly
+-  add a receding horizon to simulate an infinite horizon
